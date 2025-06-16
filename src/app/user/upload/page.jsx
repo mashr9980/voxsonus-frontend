@@ -70,7 +70,7 @@ export default function VideoUploadWithOrder() {
   ];
 
   useEffect(() => {
-    // Calculate estimated cost based on uploaded videos
+    // Calculate estimated cost based  uploaded videos
     const totalDuration = uploadedVideos.reduce(
       (sum, video) => sum + video.duration,
       0
