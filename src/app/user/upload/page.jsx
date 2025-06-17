@@ -61,7 +61,7 @@ export default function VideoUploadWithOrder() {
     { code: "zh", name: "Chinese" },
   ];
 
-  const genres = ["horror", "comedy", "romance", "action", "documentary"];
+  const genres = ["horror", "comedy", "romance", "action", "documentary", "drama", "thriller", "News", "Podcast", "general"];
 
   const outputFormats = [
     { value: "srt", name: "SRT (SubRip)" },
