@@ -360,10 +360,19 @@ export default function OrderDetails() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex items-center space-x-2">
                     <Globe className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">Languages:</span>
+                    <span className="text-sm text-gray-600">Content Type:</span>
+                    <span className="text-sm font-medium text-gray-900 capitalize">
+                      {order.subtitle_config.content_type?.replace("_", " ")}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Globe className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">Translation:</span>
                     <span className="text-sm font-medium text-gray-900">
-                      {order.subtitle_config.source_language} →{" "}
-                      {order.subtitle_config.target_language}
+                      {order.subtitle_config.enable_translation
+                        ? `Enabled (${order.subtitle_config.target_language?.toUpperCase()})`
+                        : "Disabled"}
                     </span>
                   </div>
 
@@ -389,11 +398,35 @@ export default function OrderDetails() {
 
                   <div className="flex items-center space-x-2">
                     <Film className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">Genre:</span>
-                    <span className="text-sm font-medium text-gray-900 capitalize">
-                      {order.subtitle_config.genre}
+                    <span className="text-sm text-gray-600">Genres:</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {order.subtitle_config.genres
+                        ?.map(
+                          (genre) =>
+                            genre.charAt(0).toUpperCase() + genre.slice(1)
+                        )
+                        .join(", ") || "Not specified"}
                     </span>
                   </div>
+
+                  <div className="flex items-center space-x-2">
+                    <FileText className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm text-gray-600">
+                      Output Format:
+                    </span>
+                    <span className="text-sm font-medium text-gray-900 uppercase">
+                      {order.subtitle_config.output_format}
+                    </span>
+                  </div>
+
+                  {order.subtitle_config.accessibility_mode && (
+                    <div className="flex items-center space-x-2 md:col-span-2">
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-sm font-medium text-green-700">
+                        Accessibility Mode Enabled
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

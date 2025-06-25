@@ -15,7 +15,6 @@ import {
   Globe,
   Type,
   Accessibility,
-  Volume,
   Film,
   FileText,
   CreditCard,
@@ -25,6 +24,23 @@ import {
 import Link from "next/link";
 import { getAuthHeaders } from "@/lib/auth";
 import { API_BASE_URL } from "@/lib/api";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export default function VideoUploadWithOrder() {
   const router = useRouter();
@@ -35,18 +51,21 @@ export default function VideoUploadWithOrder() {
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [creating, setCreating] = useState(false);
   const [estimatedCost, setEstimatedCost] = useState(0);
+  const [openGenreSelect, setOpenGenreSelect] = useState(false);
 
   const [subtitleConfig, setSubtitleConfig] = useState({
-    source_language: "en",
+    enable_translation: false,
     target_language: "es",
     max_chars_per_line: 42,
     lines_per_subtitle: 2,
     accessibility_mode: false,
-    non_verbal_only_mode: false,
-    non_verbal: false,
-    genre: "general",
+    content_type: "subtitles_only",
+    genres: ["general"],
     output_format: "srt",
   });
+
+  const [pricePerMinute, setPricePerMinute] = useState(1);
+  const [currency, setCurrency] = useState("USD");
 
   const languages = [
     { code: "en", name: "English" },
@@ -61,23 +80,54 @@ export default function VideoUploadWithOrder() {
     { code: "zh", name: "Chinese" },
   ];
 
-  const genres = ["horror", "comedy", "romance", "action", "documentary", "drama", "thriller", "News", "Podcast", "general"];
+  const genres = [
+    "general",
+    "horror",
+    "comedy",
+    "romance",
+    "action",
+    "documentary",
+  ];
 
   const outputFormats = [
     { value: "srt", name: "SRT (SubRip)" },
     { value: "vtt", name: "VTT (WebVTT)" },
     { value: "ass", name: "ASS (Advanced SSA)" },
+    { value: "txt", name: "Text File (TXT)" },
   ];
 
+  const fetchPricing = async () => {
+    try {
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch(
+        `${API_BASE_URL}/api/pricing/price-per-minute`,
+        {
+          headers: authHeaders,
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setPricePerMinute(data.price_per_minute);
+        setCurrency(data.currency);
+      }
+    } catch (error) {
+      console.error("Failed to fetch pricing:", error);
+    }
+  };
+
   useEffect(() => {
-    // Calculate estimated cost based  uploaded videos
+    fetchPricing();
+  }, []);
+
+  useEffect(() => {
+    // Calculate estimated cost based on uploaded videos
     const totalDuration = uploadedVideos.reduce(
       (sum, video) => sum + video.duration,
       0
     );
-    // $1 per minute
-    setEstimatedCost((totalDuration / 60) * 1);
-  }, [uploadedVideos]);
+    setEstimatedCost((totalDuration / 60) * pricePerMinute);
+  }, [uploadedVideos, pricePerMinute]);
 
   const handleFileSelect = (files) => {
     if (!files) return;
@@ -168,8 +218,17 @@ export default function VideoUploadWithOrder() {
       const authHeaders = await getAuthHeaders();
 
       const orderData = {
-        videos: uploadedVideos.map((video) => video.id), // Use the video IDs from upload response
-        subtitle_config: subtitleConfig,
+        videos: uploadedVideos.map((video) => video.id),
+        subtitle_config: {
+          enable_translation: subtitleConfig.enable_translation,
+          target_language: subtitleConfig.target_language,
+          max_chars_per_line: subtitleConfig.max_chars_per_line,
+          lines_per_subtitle: subtitleConfig.lines_per_subtitle,
+          accessibility_mode: subtitleConfig.accessibility_mode,
+          content_type: subtitleConfig.content_type,
+          genres: subtitleConfig.genres,
+          output_format: subtitleConfig.output_format,
+        },
       };
 
       const response = await fetch(`${API_BASE_URL}/api/orders/create`, {
@@ -414,55 +473,59 @@ export default function VideoUploadWithOrder() {
               </div>
 
               <div className="p-6 space-y-6">
-                {/* Languages */}
+                {/* Content Type and Translation Settings */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                       <Globe className="h-4 w-4 inline mr-1" />
-                      Source Language
+                      <span> Content Type</span>
                     </label>
                     <select
-                      value={subtitleConfig.source_language}
+                      value={subtitleConfig.content_type}
                       onChange={(e) =>
-                        handleConfigChange("source_language", e.target.value)
+                        handleConfigChange("content_type", e.target.value)
                       }
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
                     >
-                      {languages.map((lang) => (
-                        <option key={lang.code} value={lang.code}>
-                          {lang.name}
-                        </option>
-                      ))}
+                      <option value="subtitles_only">Subtitles Only</option>
+                      <option value="sounds_only">Sounds Only</option>
+                      <option value="both">Both</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      <Globe className="h-4 w-4 inline mr-1" />
-                      Target Language
-                    </label>
-                    <select
-                      value={subtitleConfig.target_language}
-                      onChange={(e) =>
-                        handleConfigChange("target_language", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                    >
-                      {languages.map((lang) => (
-                        <option key={lang.code} value={lang.code}>
-                          {lang.name}
-                        </option>
-                      ))}
-                    </select>
+                    {subtitleConfig.enable_translation && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Target Language
+                        </label>
+                        <select
+                          value={subtitleConfig.target_language}
+                          onChange={(e) =>
+                            handleConfigChange(
+                              "target_language",
+                              e.target.value
+                            )
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                        >
+                          {languages.map((lang) => (
+                            <option key={lang.code} value={lang.code}>
+                              {lang.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* Text Settings */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                       <Type className="h-4 w-4 inline mr-1" />
-                      Max Characters per Line
+                      <span>Max Characters per Line</span>
                     </label>
                     <input
                       type="number"
@@ -480,7 +543,7 @@ export default function VideoUploadWithOrder() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                       <Type className="h-4 w-4 inline mr-1" />
                       Lines per Subtitle
                     </label>
@@ -504,27 +567,96 @@ export default function VideoUploadWithOrder() {
                 {/* Genre and Format */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                       <Film className="h-4 w-4 inline mr-1" />
-                      Genre
+                      Genres
                     </label>
-                    <select
-                      value={subtitleConfig.genre}
-                      onChange={(e) =>
-                        handleConfigChange("genre", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                    <Popover
+                      open={openGenreSelect}
+                      onOpenChange={setOpenGenreSelect}
                     >
-                      {genres.map((genre) => (
-                        <option key={genre} value={genre}>
-                          {genre.charAt(0).toUpperCase() + genre.slice(1)}
-                        </option>
-                      ))}
-                    </select>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={openGenreSelect}
+                          className="w-full justify-between"
+                        >
+                          {subtitleConfig.genres.length > 0
+                            ? `${subtitleConfig.genres.length} genre${
+                                subtitleConfig.genres.length > 1 ? "s" : ""
+                              } selected`
+                            : "Select genres..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0">
+                        <Command>
+                          <CommandInput placeholder="Search genres..." />
+                          <CommandList>
+                            <CommandEmpty>No genre found.</CommandEmpty>
+                            <CommandGroup className="max-h-64 overflow-auto">
+                              {genres.map((genre) => (
+                                <CommandItem
+                                  key={genre}
+                                  onSelect={() => {
+                                    const updatedGenres =
+                                      subtitleConfig.genres.includes(genre)
+                                        ? subtitleConfig.genres.filter(
+                                            (g) => g !== genre
+                                          )
+                                        : [...subtitleConfig.genres, genre];
+                                    handleConfigChange("genres", updatedGenres);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      subtitleConfig.genres.includes(genre)
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                  {genre.charAt(0).toUpperCase() +
+                                    genre.slice(1)}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Selected Genres Display */}
+                    {subtitleConfig.genres.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {subtitleConfig.genres.map((genre) => (
+                          <Badge
+                            key={genre}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {genre.charAt(0).toUpperCase() + genre.slice(1)}
+                            <button
+                              onClick={() => {
+                                const updatedGenres =
+                                  subtitleConfig.genres.filter(
+                                    (g) => g !== genre
+                                  );
+                                handleConfigChange("genres", updatedGenres);
+                              }}
+                              className="ml-1 hover:text-red-600"
+                            >
+                              ×
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                       <FileText className="h-4 w-4 inline mr-1" />
                       Output Format
                     </label>
@@ -551,6 +683,23 @@ export default function VideoUploadWithOrder() {
                   </h4>
 
                   <div className="space-y-3">
+                    <label className="flex items-center mb-4">
+                      <input
+                        type="checkbox"
+                        checked={subtitleConfig.enable_translation}
+                        onChange={(e) =>
+                          handleConfigChange(
+                            "enable_translation",
+                            e.target.checked
+                          )
+                        }
+                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded mr-2"
+                      />
+                      <Globe className="h-4 w-4 mr-1 text-gray-500" />
+                      <span className="text-sm  text-gray-700">
+                        Enable Translation
+                      </span>
+                    </label>
                     <label className="flex items-center">
                       <input
                         type="checkbox"
@@ -569,27 +718,6 @@ export default function VideoUploadWithOrder() {
                       </span>
                       <span className="text-xs text-gray-500 ml-2">
                         (Includes sound descriptions)
-                      </span>
-                    </label>
-
-                    <label className="flex items-center">
-                      <input
-                        type="checkbox"
-                        checked={subtitleConfig.non_verbal_only_mode}
-                        onChange={(e) =>
-                          handleConfigChange(
-                            "non_verbal_only_mode",
-                            e.target.checked
-                          )
-                        }
-                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
-                      />
-                      <Volume className="h-4 w-4 ml-2 mr-1 text-gray-500" />
-                      <span className="text-sm text-gray-700">
-                        Non-verbal Only Mode
-                      </span>
-                      <span className="text-xs text-gray-500 ml-2">
-                        (Sound effects and music only)
                       </span>
                     </label>
                   </div>
@@ -628,29 +756,31 @@ export default function VideoUploadWithOrder() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Languages:</span>
+                      <span className="text-gray-600">Content Type:</span>
                       <span className="font-medium">
-                        {
-                          languages.find(
-                            (l) => l.code === subtitleConfig.source_language
-                          )?.name
-                        }{" "}
-                        →{" "}
-                        {
-                          languages.find(
-                            (l) => l.code === subtitleConfig.target_language
-                          )?.name
-                        }
+                        {subtitleConfig.content_type
+                          .replace("_", " ")
+                          .replace(/\b\w/g, (l) => l.toUpperCase())}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Output Format:</span>
+                      <span className="text-gray-600">Genres:</span>
                       <span className="font-medium">
-                        {
-                          outputFormats.find(
-                            (f) => f.value === subtitleConfig.output_format
-                          )?.name
-                        }
+                        {subtitleConfig.genres
+                          .map((g) => g.charAt(0).toUpperCase() + g.slice(1))
+                          .join(", ")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Translation:</span>
+                      <span className="font-medium">
+                        {subtitleConfig.enable_translation
+                          ? `Enabled (${
+                              languages.find(
+                                (l) => l.code === subtitleConfig.target_language
+                              )?.name
+                            })`
+                          : "Disabled"}
                       </span>
                     </div>
                     <div className="flex justify-between pt-2 border-t border-gray-200">
@@ -658,7 +788,8 @@ export default function VideoUploadWithOrder() {
                         Estimated Cost:
                       </span>
                       <span className="font-bold text-primary">
-                        ${estimatedCost.toFixed(3)}
+                        {currency === "USD" ? "$" : currency}
+                        {estimatedCost.toFixed(2)}
                       </span>
                     </div>
                   </div>
