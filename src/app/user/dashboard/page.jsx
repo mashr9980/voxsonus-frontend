@@ -21,6 +21,7 @@ import {
   AlertCircle,
   Bell,
   BellDot,
+  Merge,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -32,17 +33,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
 import {
   Popover,
   PopoverContent,
@@ -441,17 +432,17 @@ export default function UserDashboard() {
           </Link>
 
           <Link
-            href="/user/upload"
+            href="/user/merge-files"
             className="group bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg p-6 text-white hover:from-blue-700 hover:to-blue-600 transition-all duration-300 transform hover:scale-105"
           >
             <div className="flex items-center">
               <div className="p-3 bg-white/20 rounded-lg group-hover:bg-white/30 transition-colors">
-                <Plus className="h-8 w-8" />
+                <Merge className="h-8 w-8" />
               </div>
               <div className="ml-4">
-                <h3 className="text-xl font-semibold">Create Order</h3>
+                <h3 className="text-xl font-semibold">Merge Files</h3>
                 <p className="text-blue-100 mt-1">
-                  Create a new subtitle order with your uploaded videos
+                  Combine multiple subtitle files into one for easier management
                 </p>
               </div>
             </div>
