@@ -62,6 +62,7 @@ export default function VideoUploadWithOrder() {
     content_type: "subtitles_only",
     genres: ["general"],
     output_format: "srt",
+    sound_delay_seconds: 0,
   });
 
   const [pricePerMinute, setPricePerMinute] = useState(1);
@@ -87,6 +88,8 @@ export default function VideoUploadWithOrder() {
     "romance",
     "action",
     "documentary",
+    "news",
+    "podcast",
   ];
 
   const outputFormats = [
@@ -96,6 +99,21 @@ export default function VideoUploadWithOrder() {
     { value: "txt", name: "Text File (TXT)" },
   ];
 
+  const soundDelayOptions = [
+    { value: 0, name: "No Delay", description: "All detected sounds included" },
+    { value: 1, name: "1 Second", description: "Minimum 1s between sounds" },
+    { value: 5, name: "5 Seconds", description: "Minimum 5s between sounds" },
+    {
+      value: 10,
+      name: "10 Seconds",
+      description: "Minimum 10s between sounds",
+    },
+    {
+      value: 30,
+      name: "30 Seconds",
+      description: "Minimum 30s between sounds",
+    },
+  ];
   const fetchPricing = async () => {
     try {
       const authHeaders = await getAuthHeaders();
@@ -494,29 +512,26 @@ export default function VideoUploadWithOrder() {
                   </div>
 
                   <div>
-                    {subtitleConfig.enable_translation && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Target Language
-                        </label>
-                        <select
-                          value={subtitleConfig.target_language}
-                          onChange={(e) =>
-                            handleConfigChange(
-                              "target_language",
-                              e.target.value
-                            )
-                          }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                        >
-                          {languages.map((lang) => (
-                            <option key={lang.code} value={lang.code}>
-                              {lang.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
+                    <label className="flex items-center mt-2">
+                      <Clock className="h-4 w-4 mr-1 " />
+                      <span> Sound Delay</span>
+                    </label>
+                    <select
+                      value={subtitleConfig.sound_delay_seconds}
+                      onChange={(e) =>
+                        handleConfigChange(
+                          "sound_delay_seconds",
+                          Number.parseInt(e.target.value)
+                        )
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                    >
+                      {soundDelayOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
@@ -674,6 +689,28 @@ export default function VideoUploadWithOrder() {
                       ))}
                     </select>
                   </div>
+                </div>
+                <div>
+                  {subtitleConfig.enable_translation && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Target Language
+                      </label>
+                      <select
+                        value={subtitleConfig.target_language}
+                        onChange={(e) =>
+                          handleConfigChange("target_language", e.target.value)
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                      >
+                        {languages.map((lang) => (
+                          <option key={lang.code} value={lang.code}>
+                            {lang.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 {/* Special Options */}

@@ -427,6 +427,18 @@ export default function OrderDetails() {
                       </span>
                     </div>
                   )}
+
+                  {order.subtitle_config.sound_delay_seconds > 0 && (
+                    <div className="flex items-center space-x-2 md:col-span-2">
+                      <Clock className="h-4 w-4 text-green-500" />
+                      <span className="text-sm text-gray-600">
+                        Sound Delay:
+                      </span>
+                      <span className="text-sm font-medium text-gray-900 uppercase">
+                        {order.subtitle_config.sound_delay_seconds} seconds
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
