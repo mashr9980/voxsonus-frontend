@@ -507,7 +507,7 @@ export default function VideoUploadWithOrder() {
                     >
                       <option value="subtitles_only">Subtitles Only</option>
                       <option value="sounds_only">Sounds Only</option>
-                      <option value="both">Both</option>
+                      {/* <option value="both">Both</option> */}
                     </select>
                   </div>
 
